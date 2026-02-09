@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 const mongoose = require('mongoose');
 const Course = require('./models/course');
 const database = mongoose.connection;
-
+const path = require("path");
 
 const mongo_uri =
     "mongodb://admin:123@" +
@@ -32,7 +32,7 @@ app.use(cors({
     domains: '*',
     methods: '*'
 }));
-
+app.use(express.static(path.join(__dirname, "../client/")))
 
 //routes
 app.post('/course', async (req, res) => {
