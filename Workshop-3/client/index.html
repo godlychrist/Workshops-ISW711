@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Profesores</title>
+    <link rel="stylesheet" href="css/styles.css">
+
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div>
+                <h1 style="font-size: 1.5rem; margin: 0; color: #111827;">Sistema de Gestión</h1>
+                <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">Administración de Profesores</p>
+            </div>
+            <button onclick="window.location.href='pages/course.html'" class="btn-primary"
+                style="width: auto; padding: 0.5rem 1.25rem;">Ir a Cursos &rarr;</button>
+        </nav>
+
+        <div class="content-grid">
+            <!-- Form Section -->
+            <div class="card">
+                <h2>Datos del Profesor</h2>
+                <p class="subtitle">Complete los campos para crear o editar</p>
+
+                <form id="teacherForm" onsubmit="event.preventDefault();">
+                    <div class="form-group" style="display: none;">
+                        <label for="_id">ID (Oculto)</label>
+                        <input type="text" id="_id" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="name">Nombre</label>
+                        <input type="text" id="name" placeholder="Ej. Juan">
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Apellido</label>
+                        <input type="text" id="lastName" placeholder="Ej. Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label for="cedula">Cédula</label>
+                        <input type="text" id="cedula" placeholder="Ej. 1-1111-1111">
+                    </div>
+                    <div class="form-group">
+                        <label for="age">Edad</label>
+                        <input type="number" id="age" placeholder="Ej. 35">
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="button" class="btn-primary" onclick="createTeacher()">Crear</button>
+                        <button type="button" class="btn-secondary" onclick="updateTeacher()">Actualizar</button>
+                        <button type="button" class="btn-danger" onclick="deleteTeacher()">Eliminar</button>
+                    </div>
+                </form>
+
+                <div id="message"></div>
+            </div>
+
+            <!-- List Section -->
+            <div class="card">
+                <h2>Lista de Profesores</h2>
+                <p class="subtitle">Haga clic en un profesor para seleccionarlo</p>
+                <div id="teacherList" class="teacher-list">
+                    <select id="teachersList"></select>
+                </div>
+
+                <button class="btn-primary" style="margin-top: 1rem;" onclick="getTeachers()">🔄 Recargar Lista</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/teacher.js"></script>
+
+
+</body>
+
+</html>
