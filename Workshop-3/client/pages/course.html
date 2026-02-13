@@ -1,242 +1,100 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consumir API</title>
-    <style>
-        body {
-            font-family: Arial;
-            max-width: 900px;
-            margin: 24px auto;
-        }
-
-        input,
-        button,
-        select {
-            padding: 8px;
-            margin: 6px 0;
-            width: 100%;
-        }
-
-        .row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        pre {
-            background: #f6f6f6;
-            padding: 12px;
-            overflow: auto;
-        }
-    </style>
-    <script>
-
-        const API_BASE = "";
-
-        function showJSON(obj) {
-            document.getElementById("result").textContent = JSON.stringify(obj, null, 2);
-        }
-        // Get every course
-        function loadCourses() {
-            const ajaxRequest = new XMLHttpRequest();
-
-            ajaxRequest.addEventListener("load", (e) => {
-                try {
-                    const courses = JSON.parse(e.target.responseText);
-
-                    let optionsHtml = `<option value=""> -- Seleccione un curso -- </option>`;
-                    courses.forEach(c => {
-                        optionsHtml += `<option value="${c._id}">${c.name} (${c.credits} créditos)</option>`;
-                    });
-
-                    document.getElementById("coursesSelect").innerHTML = optionsHtml;
-
-                    showJSON(courses);
-                } catch (err) {
-                    showJSON({
-                        error: "Respuesta no era JSON válido",
-                        raw: e.target.responseText
-                    });
-                }
-            });
-
-            ajaxRequest.addEventListener("error", () => {
-                showJSON({ error: "No se pudo conectar a la API!" });
-            });
-
-            ajaxRequest.open("GET", `${API_BASE}/course`);
-            ajaxRequest.send();
-        }
-
-        // GET by ID Method
-
-        function loadCourseById(id) {
-            if (!id) return;
-
-            const ajaxRequest = new XMLHttpRequest();
-            ajaxRequest.addEventListener("load", (e) => {
-                const course = JSON.parse(e.target.responseText);
-
-                // Rellenar inputs para editar
-                document.getElementById("courseId").value = course._id;
-                document.getElementById("name").value = course.name ?? "";
-                document.getElementById("credits").value = course.credits ?? "";
-
-                showJSON(course);
-            });
-
-            ajaxRequest.addEventListener("error", () => {
-                showJSON({ error: "Error cargando el curso por ID" });
-            });
-
-
-            ajaxRequest.open("GET", `${API_BASE}/course?id=${encodeURIComponent(id)}`);
-            ajaxRequest.send();
-        }
-
-
-        document.addEventListener("DOMContentLoaded", () => {
-            const select = document.getElementById("coursesSelect");
-
-            select.addEventListener("change", (e) => {
-                const id = e.target.value;
-                loadCourseById(id);
-            });
-        });
-
-        // 3) POST /course (crear)
-        function createCourse() {
-            const name = document.getElementById("name").value.trim();
-            const credits = Number(document.getElementById("credits").value);
-
-            if (!name || Number.isNaN(credits)) {
-                showJSON({ error: "Debes poner name y credits (número)." });
-                return;
-            }
-
-            const ajaxRequest = new XMLHttpRequest();
-            ajaxRequest.addEventListener("load", (e) => {
-                const created = JSON.parse(e.target.responseText);
-
-                // Location header (tu API lo agrega)
-                const location = ajaxRequest.getResponseHeader("Location");
-
-                showJSON({ created, location });
-
-                // refrescar lista
-                loadCourses();
-            });
-
-            ajaxRequest.addEventListener("error", () => {
-                showJSON({ error: "Error creando el curso" });
-            });
-
-            ajaxRequest.open("POST", `${API_BASE}/course`);
-            ajaxRequest.setRequestHeader("Content-Type", "application/json");
-            ajaxRequest.send(JSON.stringify({ name, credits }));
-        }
-
-        // 4) PATCH /course?id=... (actualizar)
-        function updateCourse() {
-            const id = document.getElementById("courseId").value.trim();
-            const name = document.getElementById("name").value.trim();
-            const credits = Number(document.getElementById("credits").value);
-
-            if (!id) {
-                showJSON({ error: "Primero selecciona un curso (necesito el id)." });
-                return;
-            }
-
-            const ajaxRequest = new XMLHttpRequest();
-            ajaxRequest.addEventListener("load", (e) => {
-                const updated = JSON.parse(e.target.responseText);
-                showJSON(updated);
-                loadCourses();
-            });
-
-            ajaxRequest.addEventListener("error", () => {
-                showJSON({ error: "Error actualizando el curso" });
-            });
-
-            ajaxRequest.open("PATCH", `${API_BASE}/course?id=${encodeURIComponent(id)}`);
-            ajaxRequest.setRequestHeader("Content-Type", "application/json");
-            ajaxRequest.send(JSON.stringify({ name, credits }));
-        }
-
-        // 5) DELETE /course?id=... (eliminar)
-        function deleteCourse() {
-            const id = document.getElementById("courseId").value.trim();
-            if (!id) {
-                showJSON({ error: "Primero selecciona un curso (necesito el id)." });
-                return;
-            }
-
-            const ajaxRequest = new XMLHttpRequest();
-            ajaxRequest.addEventListener("load", (e) => {
-                const deleted = JSON.parse(e.target.responseText);
-                showJSON({ deleted, message: "Eliminado" });
-                document.getElementById("courseId").value = "";
-                document.getElementById("name").value = "";
-                document.getElementById("credits").value = "";
-                loadCourses();
-            });
-
-            ajaxRequest.addEventListener("error", () => {
-                showJSON({ error: "Error eliminando el curso" });
-            });
-
-            ajaxRequest.open("DELETE", `${API_BASE}/course?id=${encodeURIComponent(id)}`);
-            ajaxRequest.send();
-        }
-
-        window.addEventListener("DOMContentLoaded", () => {
-            // cargar cursos al iniciar
-            loadCourses();
-
-            // cuando selecciono en el select, cargo ese curso
-            document.getElementById("coursesSelect").addEventListener("change", (e) => {
-                loadCourseById(e.target.value);
-            });
-        });
-
-    </script>
+    <title>Gestión de Cursos - UTN</title>
+    <link rel="stylesheet" href="../css/course.css">
 </head>
 
 <body>
-    <h1>Courses API (UTN)</h1>
-
-    <button onclick="loadCourses()">🔄 Recargar lista (GET /course)</button>
-
-    <h3>Seleccionar curso</h3>
-    <select id="coursesSelect"></select>
-
-    <h3>Formulario</h3>
-    <input id="courseId" placeholder="Course ID (se llena solo al seleccionar)" readonly />
-
-    <div class="row">
-        <div>
-            <label>Nombre</label>
-            <input id="name" placeholder="Ej: Programación 1" />
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📚 Gestión de Cursos</h1>
+            <p class="subtitle">Sistema de administración de cursos UTN</p>
         </div>
-        <div>
-            <label>Créditos</label>
-            <input id="credits" type="number" placeholder="Ej: 4" />
+
+        <!-- Navigation -->
+        <a href="../index.html" class="fab-back" title="Volver a Profesores">
+            👨‍🏫
+        </a>
+
+        <div class="content-wrapper">
+            <!-- Form Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>📝 Datos del Curso</h2>
+                    <p class="subtitle">Complete los campos para crear o editar</p>
+                </div>
+
+                <form id="courseForm" onsubmit="event.preventDefault();">
+                    <!-- Hidden ID field -->
+                    <div class="form-group" style="display: none;">
+                        <input type="text" id="_id" readonly>
+                    </div>
+
+                    <!-- Name and Code Row -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">📖 Nombre del Curso</label>
+                            <input type="text" id="name" placeholder="Ej: Programación Web" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="code">🔢 Código</label>
+                            <input type="number" id="code" placeholder="Ej: 101" required>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-group">
+                        <label for="description">📄 Descripción</label>
+                        <textarea id="description" placeholder="Descripción del curso..." rows="4" required></textarea>
+                    </div>
+
+                    <!-- Teacher Selection -->
+                    <div class="form-group">
+                        <label for="teacher">👨‍🏫 Profesor Asignado</label>
+                        <select id="teacher">
+                            <option value="">-- Sin asignar --</option>
+                        </select>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="btn-group">
+                        <button type="button" class="btn-primary" onclick="createCourse()">➕ Crear</button>
+                        <button type="button" class="btn-secondary" onclick="updateCourse()">✏️ Actualizar</button>
+                        <button type="button" class="btn-danger" onclick="deleteCourse()">🗑️ Eliminar</button>
+                    </div>
+                </form>
+
+                <div id="message"></div>
+            </div>
+
+            <!-- List Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>📋 Lista de Cursos</h2>
+                    <p class="subtitle">Seleccione un curso para editar</p>
+                </div>
+
+                <div class="course-list">
+                    <select id="coursesSelect" size="10"></select>
+                </div>
+
+                <button class="btn-primary btn-reload" onclick="getCourses()">🔄 Recargar Lista</button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="card results-card">
+            <h3>💻 Respuesta del Servidor</h3>
+            <pre id="result">Esperando operación...</pre>
         </div>
     </div>
 
-    <div class="row">
-        <button onclick="createCourse()">➕ Crear (POST /course)</button>
-        <button onclick="updateCourse()">✏️ Actualizar (PATCH /course?id=...)</button>
-    </div>
-
-    <button onclick="deleteCourse()">🗑️ Eliminar (DELETE /course?id=...)</button>
-
-    <h3>Results:</h3>
-    <pre id="result"></pre>
-
+    <script src="../js/course.js"></script>
 </body>
 
 </html>
