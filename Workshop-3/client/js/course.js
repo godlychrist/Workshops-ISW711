@@ -1,157 +1,155 @@
-const API_BASE = "";
+let coursesCache = [];
+let teachersCache = [];
 
 function showJSON(obj) {
     document.getElementById("result").textContent = JSON.stringify(obj, null, 2);
 }
 
-// Get every course
-function loadCourses() {
-    const ajaxRequest = new XMLHttpRequest();
+// * Courses
+function loadCoursesIntoSelect(courses) {
+    const select = document.getElementById("coursesSelect");
+    select.innerHTML = "";
+    courses.forEach(course => {
+        const option = document.createElement("option");
+        option.value = course._id;
+        option.textContent = course.name;
+        select.appendChild(option);
+    })
+};
 
-    ajaxRequest.addEventListener("load", (e) => {
-        try {
-            const courses = JSON.parse(e.target.responseText);
-
-            let optionsHtml = `<option value=""> -- Seleccione un curso -- </option>`;
-            courses.forEach(c => {
-                optionsHtml += `<option value="${c._id}">${c.name} (${c.credits} créditos)</option>`;
-            });
-
-            document.getElementById("coursesSelect").innerHTML = optionsHtml;
-
-            showJSON(courses);
-        } catch (err) {
-            showJSON({
-                error: "Respuesta no era JSON válido",
-                raw: e.target.responseText
-            });
-        }
-    });
-
-    ajaxRequest.addEventListener("error", () => {
-        showJSON({ error: "No se pudo conectar a la API!" });
-    });
-
-    ajaxRequest.open("GET", `${API_BASE}/course`);
-    ajaxRequest.send();
+function getCourses() {
+    fetch("/course")
+        .then(response => {
+            if (!response.ok) throw new Error("Error");
+            return response.json();
+        })
+        .then(data => {
+            coursesCache = data;
+            loadCoursesIntoSelect(data);
+        })
+        .catch(error => showMessage("Error al cargar cursos", true));
 }
 
-// GET by ID Method
-function loadCourseById(id) {
-    if (!id) return;
-
-    const ajaxRequest = new XMLHttpRequest();
-    ajaxRequest.addEventListener("load", (e) => {
-        const course = JSON.parse(e.target.responseText);
-
-        // Rellenar inputs para editar
-        document.getElementById("courseId").value = course._id;
-        document.getElementById("name").value = course.name ?? "";
-        document.getElementById("credits").value = course.credits ?? "";
-
-        showJSON(course);
-    });
-
-    ajaxRequest.addEventListener("error", () => {
-        showJSON({ error: "Error cargando el curso por ID" });
-    });
-
-    ajaxRequest.open("GET", `${API_BASE}/course?id=${encodeURIComponent(id)}`);
-    ajaxRequest.send();
-}
-
-// POST /course (crear)
 function createCourse() {
-    const name = document.getElementById("name").value.trim();
-    const credits = Number(document.getElementById("credits").value);
-
-    if (!name || Number.isNaN(credits)) {
-        showJSON({ error: "Debes poner name y credits (número)." });
-        return;
+    const course = {
+        name: document.getElementById("name").value,
+        code: document.getElementById("code").value,
+        description: document.getElementById("description").value,
+        teacherId: document.getElementById("teacher").value,
     }
-
-    const ajaxRequest = new XMLHttpRequest();
-    ajaxRequest.addEventListener("load", (e) => {
-        const created = JSON.parse(e.target.responseText);
-
-        // Location header (tu API lo agrega)
-        const location = ajaxRequest.getResponseHeader("Location");
-
-        showJSON({ created, location });
-
-        // refrescar lista
-        loadCourses();
-    });
-
-    ajaxRequest.addEventListener("error", () => {
-        showJSON({ error: "Error creando el curso" });
-    });
-
-    ajaxRequest.open("POST", `${API_BASE}/course`);
-    ajaxRequest.setRequestHeader("Content-Type", "application/json");
-    ajaxRequest.send(JSON.stringify({ name, credits }));
+    fetch("/course", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(course)
+    })
+        .then(response => {
+            if (!response.ok) throw new Error("Error");
+            return response.json();
+        })
+        .then(data => {
+            getCourses();
+        })
+        .catch(error => showMessage("Error al crear curso", true));
 }
 
-// PATCH /course?id=... (actualizar)
 function updateCourse() {
-    const id = document.getElementById("courseId").value.trim();
-    const name = document.getElementById("name").value.trim();
-    const credits = Number(document.getElementById("credits").value);
-
-    if (!id) {
-        showJSON({ error: "Primero selecciona un curso (necesito el id)." });
-        return;
+    const id = document.getElementById("_id").value;
+    const name = document.getElementById("name").value;
+    const code = document.getElementById("code").value;
+    const description = document.getElementById("description").value;
+    const teacher = document.getElementById("teacher").value;
+    const course = {
+        _id,
+        name,
+        code,
+        description,
+        teacher
     }
-
-    const ajaxRequest = new XMLHttpRequest();
-    ajaxRequest.addEventListener("load", (e) => {
-        const updated = JSON.parse(e.target.responseText);
-        showJSON(updated);
-        loadCourses();
-    });
-
-    ajaxRequest.addEventListener("error", () => {
-        showJSON({ error: "Error actualizando el curso" });
-    });
-
-    ajaxRequest.open("PATCH", `${API_BASE}/course?id=${encodeURIComponent(id)}`);
-    ajaxRequest.setRequestHeader("Content-Type", "application/json");
-    ajaxRequest.send(JSON.stringify({ name, credits }));
+    fetch(`/course?id=${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(course)
+    })
+        .then(response => {
+            if (!response.ok) throw new Error("Error");
+            return response.json();
+        })
+        .then(data => {
+            getCourses();
+        })
+        .catch(error => showMessage("Error al actualizar curso", true));
 }
 
-// DELETE /course?id=... (eliminar)
 function deleteCourse() {
-    const id = document.getElementById("courseId").value.trim();
-    if (!id) {
-        showJSON({ error: "Primero selecciona un curso (necesito el id)." });
-        return;
-    }
-
-    const ajaxRequest = new XMLHttpRequest();
-    ajaxRequest.addEventListener("load", (e) => {
-        const deleted = JSON.parse(e.target.responseText);
-        showJSON({ deleted, message: "Eliminado" });
-        document.getElementById("courseId").value = "";
-        document.getElementById("name").value = "";
-        document.getElementById("credits").value = "";
-        loadCourses();
-    });
-
-    ajaxRequest.addEventListener("error", () => {
-        showJSON({ error: "Error eliminando el curso" });
-    });
-
-    ajaxRequest.open("DELETE", `${API_BASE}/course?id=${encodeURIComponent(id)}`);
-    ajaxRequest.send();
+    const id = document.getElementById("_id").value;
+    fetch(`/course?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            _id: id
+        })
+    })
+        .then(response => {
+            if (!response.ok) throw new Error("Error");
+            return response.json();
+        })
+        .then(data => {
+            getCourses();
+        })
+        .catch(error => showMessage("Error al eliminar curso", true));
 }
 
-// Initialize
-window.addEventListener("DOMContentLoaded", () => {
-    // cargar cursos al iniciar
-    loadCourses();
+// * Teacher
 
-    // cuando selecciono en el select, cargo ese curso
-    document.getElementById("coursesSelect").addEventListener("change", (e) => {
-        loadCourseById(e.target.value);
+function loadTeachersIntoSelect(teachers) {
+    const select = document.getElementById("teacher");
+    select.innerHTML = "";
+    teachers.forEach(teacher => {
+        const option = document.createElement("option");
+        option.value = teacher._id;
+        option.textContent = teacher.name;
+        select.appendChild(option);
+    })
+};
+
+function getTeachers() {
+    fetch("/teacher")
+        .then(response => {
+            if (!response.ok) throw new Error("Error");
+            return response.json();
+        })
+        .then(data => {
+            teachersCache = data;
+            loadTeachersIntoSelect(data);
+        })
+        .catch(error => showMessage("Error al cargar docentes", true));
+}
+
+function selectCourse(courseData) {
+    document.getElementById("_id").value = courseData._id;
+    document.getElementById("name").value = courseData.name;
+    document.getElementById("code").value = courseData.code;
+    document.getElementById("description").value = courseData.description;
+    document.getElementById("teacher").value = courseData.teacher;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    getCourses();
+    getTeachers();
+    const select = document.getElementById("coursesSelect");
+    select.addEventListener("change", () => {
+        const selectedId = select.value;
+        const selectedCourse = coursesCache.find(course => course._id === selectedId);
+        if (selectedCourse) selectCourse(selectedCourse);
     });
+
 });
+
+
+
